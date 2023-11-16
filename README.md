@@ -196,5 +196,26 @@ HTTP-сервер:
  • Реализуйте простой HTTP-сервер, используя Tarantool HTTP-фреймворк или другой подходящий инструмент.
  • Создайте эндпоинт для получения информации о звонке по его идентификатору (call_id).
 
- Много разных вариантов пробовал, где-то да выбивает ошибку.
- Могу прислать, что получилось, но оно не работает - вылетает internal error.
+```
+function call_info(self)
+    local call_id = tonumber(self:stash('call_id'))
+    local r = box.space.call_records.index['primary']:select{call_id}
+    local call = r[1]
+    local json = require('json').new()
+    if r[0] then
+    
+        self:response():send({ json = { ['call_id'] = call[1],
+                                        ['caller_n'] = call[2],
+                                        ['callee_n'] = call[3],
+                                        ['duration'] = call[4],
+                                        ['timestamp'] = call[5]
+                                           } })
+    else
+        self:response():send({ status = 404 })
+    end
+end
+
+server = require('http.server').new(nil, 9080)
+server:route({ method = 'GET', path = '/call/:call_id' }, call_info)
+server:start()
+```
