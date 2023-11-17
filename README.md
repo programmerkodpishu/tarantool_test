@@ -199,23 +199,23 @@ HTTP-сервер:
 ```
 function call_info(self)
     local call_id = tonumber(self:stash('call_id'))
-    local r = box.space.call_records.index['primary']:select{call_id}
-    local call = r[1]
-    local json = require('json').new()
-    if r[0] then
-    
-        self:response():send({ json = { ['call_id'] = call[1],
-                                        ['caller_n'] = call[2],
-                                        ['callee_n'] = call[3],
-                                        ['duration'] = call[4],
-                                        ['timestamp'] = call[5]
-                                           } })
-    else
-        self:response():send({ status = 404 })
-    end
-end
+    local call = box.space.call_records.index['primary']:select{call_id}
 
-server = require('http.server').new(nil, 9080)
+    if call[1] then
+        local record = call[1]
+        return self:render{ json = {['call_id'] = record[1],
+                                    ['caller_name'] = record[2],
+                                    ['calle_name'] = record[3],
+                                    ['duration'] = record[4],
+                                    ['timestamp'] = record[5]
+                                    }}
+    else
+        return self:render{ json = { ['error'] = 'not found' } }
+    end
+  
+end 
+
+server = require('http.server').new(nil, 8029)
 server:route({ method = 'GET', path = '/call/:call_id' }, call_info)
 server:start()
 ```
